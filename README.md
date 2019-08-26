@@ -1,0 +1,1 @@
+crawler is a package for detecting crawlers by an http requests user-agent
