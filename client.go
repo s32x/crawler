@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"s32x.com/httpclient"
+	"github.com/go-resty/resty/v2"
 )
 
 const crawlerURL = "https://raw.githubusercontent.com/monperrus/crawler-user-agents/master/crawler-user-agents.json"
@@ -13,24 +13,25 @@ const crawlerURL = "https://raw.githubusercontent.com/monperrus/crawler-user-age
 // Client is a struct that contains the
 type Client struct{ botRegexps []*regexp.Regexp }
 
-// Crawlers is a struct that represents the JSON response from monperrus'
+// Crawler is a struct that represents the JSON response from monperrus'
 // crawler data-set
-type Crawlers struct {
-	Pattern   string   `json:"pattern"`
-	URL       string   `json:"url"`
-	Instances []string `json:"instances"`
+type Crawler struct {
+	Pattern      string   `json:"pattern"`
+	URL          string   `json:"url,omitempty"`
+	Instances    []string `json:"instances"`
+	AdditionDate string   `json:"addition_date,omitempty"`
+	DependsOn    []string `json:"depends_on,omitempty"`
+	Description  string   `json:"description,omitempty"`
 }
 
 // New creates a new crawler client
 func New() (*Client, error) {
-	// Retrieve the crawler dataset for map population
-	var crawlers []Crawlers
-	if err := httpclient.New().
-		Get(crawlerURL).
-		WithExpectedStatus(200).
-		WithRetry(5).
-		JSON(&crawlers); err != nil {
-		return nil, fmt.Errorf("failed to retrieve crawler dataset: %w", err)
+	// Retrieve and decode the crawler dataset into a new slice of Crawler
+	var crawlers []Crawler
+	if _, err := resty.New().SetRetryCount(5).R().
+		ForceContentType("application/json").
+		SetResult(&crawlers).Get(crawlerURL); err != nil {
+		return nil, fmt.Errorf("retrieving crawler dataset: %w", err)
 	}
 
 	// Iterate over all crawlers and return a fully populated Client containing
