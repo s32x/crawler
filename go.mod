@@ -1,4 +1,4 @@
-module s32x.com/crawler
+module github.com/s32x/crawler
 
 go 1.17
 
